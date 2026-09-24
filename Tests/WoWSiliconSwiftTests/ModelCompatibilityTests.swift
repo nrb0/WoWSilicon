@@ -132,6 +132,18 @@ final class ModelCompatibilityTests: XCTestCase {
         XCTAssertTrue(decoded.wineBottleMigrationAsked)
     }
 
+    func testVersionSettingsDefaultsGameArgumentsWhenKeyIsAbsent() throws {
+        let settings = try JSONDecoder().decode(VersionSettings.self, from: Data("{}".utf8))
+        XCTAssertEqual(settings.gameArguments, "")
+    }
+
+    func testVersionSettingsRoundTripsGameArguments() throws {
+        var settings = VersionSettings()
+        settings.gameArguments = "-login \"NAME\""
+        let decoded = try JSONDecoder().decode(VersionSettings.self, from: try JSONEncoder().encode(settings))
+        XCTAssertEqual(decoded.gameArguments, "-login \"NAME\"")
+    }
+
     func testGameVersionExecutableAndDirectoryPathResolution() {
         var version = GameVersion(
             id: "test",

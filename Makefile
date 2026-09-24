@@ -100,7 +100,7 @@ bundle: build validate_wine_runtime audio_helper
 	@cp "$(AUDIO_HELPER)" "$(APP_BUNDLE)/Contents/Resources/Audio/"
 	@find "$(APP_BUNDLE)/Contents/Resources/Wine" -name '.DS_Store' -delete
 	@cp "$(APP_ICON)" "$(APP_BUNDLE)/Contents/Resources/turtle.icns"
-	@xattr -cr "$(APP_BUNDLE)"
+	@find "$(APP_BUNDLE)" -exec xattr -c {} +
 	@if [ -n "$(CODESIGN_IDENTITY)" ]; then \
 		echo "Signing $(APP_BUNDLE) with identity $(CODESIGN_IDENTITY)..."; \
 		codesign --force --deep --sign "$(CODESIGN_IDENTITY)" "$(APP_BUNDLE)"; \

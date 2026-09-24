@@ -264,6 +264,10 @@ struct VersionSettings: Codable, Equatable, Sendable {
     var enableMetalHud: Bool
     var showTerminalNormally: Bool
     var environmentVariables: String
+    // Command-line arguments appended to the game executable. Stored per game version and
+    // deliberately absent from UserPrefs, whose values are copied onto whichever version is
+    // selected and would therefore share arguments between game versions.
+    var gameArguments: String
     var vanillaTweaksParameters: String
     var cursorSizeMultiplier: Int
     var graphicsSettings: GraphicsSettings
@@ -287,6 +291,7 @@ struct VersionSettings: Codable, Equatable, Sendable {
         enableMetalHud: Bool = false,
         showTerminalNormally: Bool = false,
         environmentVariables: String = "",
+        gameArguments: String = "",
         vanillaTweaksParameters: String = "",
         cursorSizeMultiplier: Int = 1,
         graphicsSettings: GraphicsSettings = GraphicsSettings(),
@@ -305,6 +310,7 @@ struct VersionSettings: Codable, Equatable, Sendable {
         self.enableMetalHud = enableMetalHud
         self.showTerminalNormally = showTerminalNormally
         self.environmentVariables = environmentVariables
+        self.gameArguments = gameArguments
         self.vanillaTweaksParameters = vanillaTweaksParameters
         self.cursorSizeMultiplier = cursorSizeMultiplier
         self.graphicsSettings = graphicsSettings
@@ -319,7 +325,7 @@ struct VersionSettings: Codable, Equatable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case enableVanillaTweaks, remapOptionAsAlt, autoDeleteWdb, enableMetalHud
-        case showTerminalNormally, environmentVariables
+        case showTerminalNormally, environmentVariables, gameArguments
         case vanillaTweaksParameters, cursorSizeMultiplier
         case graphicsSettings
         case enableLibSiliconPatch, userDisabledLibSiliconPatch
@@ -340,6 +346,7 @@ struct VersionSettings: Codable, Equatable, Sendable {
         enableMetalHud = try container.decodeIfPresent(Bool.self, forKey: .enableMetalHud) ?? false
         showTerminalNormally = try container.decodeIfPresent(Bool.self, forKey: .showTerminalNormally) ?? false
         environmentVariables = try container.decodeIfPresent(String.self, forKey: .environmentVariables) ?? ""
+        gameArguments = try container.decodeIfPresent(String.self, forKey: .gameArguments) ?? ""
         vanillaTweaksParameters = try container.decodeIfPresent(String.self, forKey: .vanillaTweaksParameters) ?? ""
         cursorSizeMultiplier = try container.decodeIfPresent(Int.self, forKey: .cursorSizeMultiplier) ?? 1
         enableLibSiliconPatch = try container.decodeIfPresent(Bool.self, forKey: .enableLibSiliconPatch) ?? false
@@ -388,6 +395,7 @@ struct VersionSettings: Codable, Equatable, Sendable {
         try container.encode(enableMetalHud, forKey: .enableMetalHud)
         try container.encode(showTerminalNormally, forKey: .showTerminalNormally)
         try container.encode(environmentVariables, forKey: .environmentVariables)
+        try container.encode(gameArguments, forKey: .gameArguments)
         try container.encode(vanillaTweaksParameters, forKey: .vanillaTweaksParameters)
         try container.encode(cursorSizeMultiplier, forKey: .cursorSizeMultiplier)
         try container.encode(graphicsSettings, forKey: .graphicsSettings)

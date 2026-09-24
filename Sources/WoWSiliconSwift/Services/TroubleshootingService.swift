@@ -360,6 +360,7 @@ enum TroubleshootingService {
             baseLog += "  Metal HUD: \(settings.enableMetalHud)\n"
             baseLog += "  Show Terminal Normally: \(settings.showTerminalNormally)\n"
             baseLog += "  Environment Variables: \(settings.environmentVariables)\n"
+            baseLog += "  Game Arguments: \(settings.gameArguments)\n"
             let gs = settings.graphicsSettings
             baseLog += "  Graphics Backend: \(gs.backend.displayName)\n"
             if version.supportsCustomGraphicsSettings {

@@ -230,6 +230,24 @@ struct OptionsView: View {
                         .stroke(Color.secondary.opacity(0.2))
                 )
 
+            Divider()
+                .padding(.vertical, 8)
+
+            Text("Game Arguments")
+                .font(.headline)
+
+            Text("Passed to the game executable on launch. Quoted values are supported, for example: -login \"NAME\" -password \"SECRET\"")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            gameArgumentsEditor
+
+            if let message = gameArgumentsValidationMessage {
+                Label(message, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
+
             if viewModel.isVanillaTweaksSupported {
                 Divider()
                     .padding(.vertical, 8)
@@ -727,6 +745,44 @@ struct OptionsView: View {
             return "Uses rosettax87_jit for accelerated x87 translation."
         case .x87Sidecar:
             return "Runs accelerated x87 translation in an isolated helper process."
+        }
+    }
+
+    private var gameArgumentsBinding: Binding<String> {
+        viewModel.stringBinding(\.gameArguments)
+    }
+
+    private var gameArgumentsValidationMessage: String? {
+        do {
+            _ = try GameArguments.parse(gameArgumentsBinding.wrappedValue)
+            return nil
+        } catch {
+            return error.localizedDescription
+        }
+    }
+
+    private var gameArgumentsEditor: some View {
+        ZStack(alignment: .topLeading) {
+            TextEditor(text: gameArgumentsBinding)
+                .font(.body.monospaced())
+                .padding(12)
+                .frame(minHeight: 80)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(nsColor: .textBackgroundColor))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.secondary.opacity(0.2))
+                )
+
+            if gameArgumentsBinding.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text("-console")
+                    .font(.body.monospaced())
+                    .foregroundStyle(Color.secondary.opacity(0.6))
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 16)
+            }
         }
     }
 

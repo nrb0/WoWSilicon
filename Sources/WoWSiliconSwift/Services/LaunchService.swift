@@ -52,6 +52,7 @@ enum LaunchServiceError: LocalizedError {
     case processLaunchFailed(String)
     case appleScriptFailed(String)
     case versionMismatch(String, String)
+    case invalidGameArguments(String)
 
     var errorDescription: String? {
         switch self {
@@ -81,6 +82,8 @@ enum LaunchServiceError: LocalizedError {
             return "Failed to launch in Terminal: \(reason)"
         case .versionMismatch(let base, let tweaked):
             return "Build mismatch detected.\n\nWoW.exe: \(base)\nWoW_tweaked.exe: \(tweaked)\n\nWoWSilicon can re-generate the tweaked executable for you."
+        case .invalidGameArguments(let reason):
+            return "Game arguments could not be parsed: \(reason)"
         }
     }
 }
@@ -253,12 +256,22 @@ final class LaunchService: @unchecked Sendable {
             }
         }
 
+        let gameArgumentsFragment: String
+        do {
+            gameArgumentsFragment = GameArguments.makeShellFragment(
+                try GameArguments.parse(version.settings.gameArguments)
+            )
+        } catch {
+            throw LaunchServiceError.invalidGameArguments(error.localizedDescription)
+        }
+
         let shellCommand = makeShellCommand(
             gameURL: gameURL,
             x87Runtime: x87Runtime,
             wowURL: wowExecutableURL,
             wineExecutablePath: wineExecutableURL.path,
-            settings: version.settings
+            settings: version.settings,
+            gameArgumentsFragment: gameArgumentsFragment
         )
 
         return LaunchConfiguration(
@@ -456,7 +469,7 @@ final class LaunchService: @unchecked Sendable {
             + "(exit $_wowsilicon_status)"
     }
 
-    private func makeShellCommand(gameURL: URL, x87Runtime: BundledX87Runtime.ResolvedRuntime?, wowURL: URL, wineExecutablePath: String, settings: VersionSettings) -> String {
+    private func makeShellCommand(gameURL: URL, x87Runtime: BundledX87Runtime.ResolvedRuntime?, wowURL: URL, wineExecutablePath: String, settings: VersionSettings, gameArgumentsFragment: String) -> String {
         let game = shellQuote(gameURL.path)
         let wow = shellQuote(wowURL.path)
         let wine = shellQuote(wineExecutablePath)
@@ -477,11 +490,15 @@ final class LaunchService: @unchecked Sendable {
         let custom = BundledWineRuntime.shellEnvironmentAssignments(settings.environmentVariables)
         let envPart = custom.isEmpty ? baseEnv : "\(custom) \(baseEnv)"
 
+        let invocation = gameArgumentsFragment.isEmpty
+            ? "\(wine) \(wow)"
+            : "\(wine) \(wow) \(gameArgumentsFragment)"
+
         if let x87Runtime {
             let binary = shellQuote(x87Runtime.executableURL.path)
-            return "cd \(game) && \(x87Runtime.wineEnvironmentKey)=\(binary) \(envPart) \(wine) \(wow)"
+            return "cd \(game) && \(x87Runtime.wineEnvironmentKey)=\(binary) \(envPart) \(invocation)"
         } else {
-            return "cd \(game) && \(envPart) \(wine) \(wow)"
+            return "cd \(game) && \(envPart) \(invocation)"
         }
     }
 
