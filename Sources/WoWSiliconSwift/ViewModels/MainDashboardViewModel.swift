@@ -42,6 +42,9 @@ final class MainDashboardViewModel: ObservableObject {
     @Published private(set) var isWineTerminalLoading: Bool = false
     @Published private(set) var isShortcutExportInProgress: Bool = false
     @Published private(set) var shortcutExportFeedback: PatchFeedback?
+    @Published private(set) var isApplicationExportInProgress: Bool = false
+    @Published private(set) var applicationExportFeedback: PatchFeedback?
+    @Published private(set) var exportedApplicationLocation: URL?
     @Published private(set) var isApplyingVanillaTweaks: Bool = false
     @Published private(set) var isOptionAsAltBusy: Bool = false
     @Published private(set) var optionAsAltStatus: OptionAsAltStatus = .unknown
@@ -675,6 +678,44 @@ final class MainDashboardViewModel: ObservableObject {
                 }
             }
         }
+    }
+
+    func exportLaunchApplication(to destinationLocation: URL) {
+        guard !isApplicationExportInProgress, let version = versionManager.currentVersion else { return }
+        isApplicationExportInProgress = true
+        applicationExportFeedback = nil
+        exportedApplicationLocation = nil
+
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self else { return }
+            do {
+                let shellScript = try self.launchService.shortcutShellScript(for: version)
+                try AppExportService.createLaunchApplication(at: destinationLocation, shellScript: shellScript)
+                DispatchQueue.main.async {
+                    self.isApplicationExportInProgress = false
+                    self.exportedApplicationLocation = destinationLocation
+                    self.applicationExportFeedback = PatchFeedback(
+                        title: "App Created",
+                        message: "\(destinationLocation.lastPathComponent) is ready to launch.",
+                        isError: false
+                    )
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.isApplicationExportInProgress = false
+                    self.applicationExportFeedback = PatchFeedback(
+                        title: "App Export Failed",
+                        message: error.localizedDescription,
+                        isError: true
+                    )
+                }
+            }
+        }
+    }
+
+    func revealExportedApplication() {
+        guard let exportedApplicationLocation else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([exportedApplicationLocation])
     }
 
     func launchGame() {

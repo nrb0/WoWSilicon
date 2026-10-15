@@ -112,6 +112,7 @@ struct OptionsView: View {
             Divider()
                 .padding(.vertical, 4)
             launchShortcutControls
+            ApplicationExportControls(viewModel: viewModel)
             Divider()
                 .padding(.vertical, 4)
             telemetryControls

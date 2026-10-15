@@ -27,8 +27,12 @@ AUDIO_HELPER_SRC := tools/wine-audio-helper/wowsilicon-audio.c
 AUDIO_HELPER_DIR := $(BUILD_DIR)/audio-helper
 AUDIO_HELPER := $(AUDIO_HELPER_DIR)/wowsilicon-audio.exe
 AUDIO_HELPER_CC ?= i686-w64-mingw32-gcc
+APP_LAUNCHER_SRC := tools/app-launcher/launcher.c
+APP_LAUNCHER_DIR := $(BUILD_DIR)/app-launcher
+APP_LAUNCHER := $(APP_LAUNCHER_DIR)/launcher
+APP_LAUNCHER_ICON := Packaging/AppLauncher/AppIcon.icns
 
-.PHONY: all build debug run bundle dmg appcast clean app_icon audio_helper validate_wine_runtime package_wine_runtime update-mtld3d update-x87sidecar
+.PHONY: all build debug run bundle dmg appcast clean app_icon audio_helper validate_wine_runtime package_wine_runtime update-mtld3d update-x87sidecar app_launcher
 
 all: bundle
 
@@ -68,7 +72,15 @@ $(AUDIO_HELPER): $(AUDIO_HELPER_SRC)
 	@mkdir -p "$(AUDIO_HELPER_DIR)"
 	@$(AUDIO_HELPER_CC) -std=c11 -Os -s -municode "$<" -o "$@" -lole32 -luuid -ldsound -ldxguid -lwinmm
 
-bundle: build validate_wine_runtime audio_helper
+app_launcher: $(APP_LAUNCHER)
+
+$(APP_LAUNCHER): $(APP_LAUNCHER_SRC) $(APP_LAUNCHER_ICON)
+	@echo "Building app launcher..."
+	@mkdir -p "$(APP_LAUNCHER_DIR)"
+	@xcrun clang -std=c11 -Os -Wall -Wextra -Werror -arch arm64 -mmacosx-version-min=14.0 "$<" -o "$@"
+	@cp "$(APP_LAUNCHER_ICON)" "$(APP_LAUNCHER_DIR)/AppIcon.icns"
+
+bundle: build validate_wine_runtime audio_helper app_launcher
 	@$(MAKE) app_icon
 	@echo "Staging $(APP_NAME).app..."
 
@@ -98,6 +110,9 @@ bundle: build validate_wine_runtime audio_helper
 	@cp -R "$(WINE_RUNTIME_DIR)/." "$(APP_BUNDLE)/Contents/Resources/Wine/"
 	@mkdir -p "$(APP_BUNDLE)/Contents/Resources/Audio"
 	@cp "$(AUDIO_HELPER)" "$(APP_BUNDLE)/Contents/Resources/Audio/"
+	@mkdir -p "$(APP_BUNDLE)/Contents/Resources/AppLauncher"
+	@cp "$(APP_LAUNCHER)" "$(APP_BUNDLE)/Contents/Resources/AppLauncher/launcher"
+	@cp "$(APP_LAUNCHER_DIR)/AppIcon.icns" "$(APP_BUNDLE)/Contents/Resources/AppLauncher/AppIcon.icns"
 	@find "$(APP_BUNDLE)/Contents/Resources/Wine" -name '.DS_Store' -delete
 	@cp "$(APP_ICON)" "$(APP_BUNDLE)/Contents/Resources/turtle.icns"
 	@find "$(APP_BUNDLE)" -exec xattr -c {} +
